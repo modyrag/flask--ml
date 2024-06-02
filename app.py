@@ -1,4 +1,5 @@
-import gradio as gr
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pickle
 
 # Load the SentimentIntensityAnalyzer object from the pickle file
@@ -18,12 +19,19 @@ def analyze_sentiment(text):
     else:
         return "Neutral"
 
+# Create a Flask application
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-with gr.Blocks() as demo:
-    name = gr.Textbox(label="Your Text")
-    output = gr.Textbox(label="sentiment label")
-    greet_btn = gr.Button("check")
-    greet_btn.click(fn=analyze_sentiment, inputs=name, outputs=output, api_name="analyze_sentiment")
+# Define a route for the sentiment analysis API
+@app.route('/analyze_sentiment', methods=['POST'])
+def analyze_sentiment_route():
+    if not request.json or 'text' not in request.json:
+        return jsonify({"error": "Invalid input"}), 400
+
+    text = request.json['text']
+    sentiment_label = analyze_sentiment(text)
+    return jsonify({"sentiment": sentiment_label})
 
 if __name__ == "__main__":
-    demo.launch()
+    app.run(debug=True)
